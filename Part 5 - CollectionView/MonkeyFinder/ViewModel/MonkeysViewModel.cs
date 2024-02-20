@@ -5,9 +5,16 @@ namespace MonkeyFinder.ViewModel;
 public partial class MonkeysViewModel : BaseViewModel
 {
     public ObservableCollection<Monkey> Monkeys { get; } = new();
+
     MonkeyService monkeyService;
+
     IConnectivity connectivity;
+
     IGeolocation geolocation;
+
+    [ObservableProperty] 
+    private bool isRefreshing;
+
     public MonkeysViewModel(MonkeyService monkeyService, IConnectivity connectivity, IGeolocation geolocation)
     {
         Title = "Monkey Finder";
@@ -15,16 +22,16 @@ public partial class MonkeysViewModel : BaseViewModel
         this.connectivity = connectivity;
         this.geolocation = geolocation;
     }
-    
+
     [RelayCommand]
     async Task GoToDetails(Monkey monkey)
     {
         if (monkey == null)
-        return;
+            return;
 
         await Shell.Current.GoToAsync(nameof(DetailsPage), true, new Dictionary<string, object>
         {
-            {"Monkey", monkey }
+            { "Monkey", monkey }
         });
     }
 
@@ -46,12 +53,11 @@ public partial class MonkeysViewModel : BaseViewModel
             IsBusy = true;
             var monkeys = await monkeyService.GetMonkeys();
 
-            if(Monkeys.Count != 0)
+            if (Monkeys.Count != 0)
                 Monkeys.Clear();
-                
-            foreach(var monkey in monkeys)
-                Monkeys.Add(monkey);
 
+            foreach (var monkey in monkeys)
+                Monkeys.Add(monkey);
         }
         catch (Exception ex)
         {
@@ -61,8 +67,8 @@ public partial class MonkeysViewModel : BaseViewModel
         finally
         {
             IsBusy = false;
+            IsRefreshing = false;
         }
-
     }
 
     [RelayCommand]
@@ -86,12 +92,11 @@ public partial class MonkeysViewModel : BaseViewModel
 
             // Find closest monkey to us
             var first = Monkeys.OrderBy(m => location.CalculateDistance(
-                new Location(m.Latitude, m.Longitude), DistanceUnits.Miles))
+                    new Location(m.Latitude, m.Longitude), DistanceUnits.Miles))
                 .FirstOrDefault();
 
             await Shell.Current.DisplayAlert("", first.Name + " " +
-                first.Location, "OK");
-
+                                                 first.Location, "OK");
         }
         catch (Exception ex)
         {
